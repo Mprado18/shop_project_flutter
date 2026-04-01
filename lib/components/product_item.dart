@@ -1,51 +1,64 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shop/models/product.dart';
-import 'package:shop/providers/cart_provider.dart';
+import 'package:shop/providers/product_list_provider.dart';
 import 'package:shop/utils/app_routes.dart';
 
 class ProductItem extends StatelessWidget {
-  const ProductItem({super.key});
+  final Product product;
+  const ProductItem({required this.product, super.key});
 
   @override
   Widget build(BuildContext context) {
-    final product = Provider.of<Product>(context, listen: false);
-    final cart = Provider.of<CartProvider>(context, listen: false);
-
-    return ClipRRect(
-      borderRadius: BorderRadiusGeometry.circular(10),
-      child: GridTile(
-        footer: GridTileBar(
-          // TODO ajustar o texto que está cortando para ficar responsivo
-          title: Text(product.name, textAlign: TextAlign.center),
-          backgroundColor: Colors.black45,
-          // TODO consumer possibilita colocar o Provider somente onde precisa ser modificado
-          // TODO terceiro param é um child que nunca muda para usar no builder
-          leading: Consumer<Product>(
-            builder: (ctx, product, _) => IconButton(
+    return ListTile(
+      leading: CircleAvatar(backgroundImage: NetworkImage(product.imageUrl)),
+      title: Text(product.name),
+      trailing: SizedBox(
+        width: 100,
+        child: Row(
+          children: [
+            IconButton(
               onPressed: () {
-                product.toggleFavorite();
+                Navigator.of(
+                  context,
+                ).pushNamed(AppRoutes.productForm, arguments: product);
               },
-              icon: Icon(
-                product.isFavorite ? Icons.favorite : Icons.favorite_border,
-                color: const Color.fromARGB(255, 212, 103, 95),
-              ),
+              icon: Icon(Icons.edit),
             ),
-          ),
-          trailing: IconButton(
-            onPressed: () {
-              cart.addItem(product);
-            },
-            icon: Icon(Icons.shopping_cart, color: Colors.white60),
-          ),
-        ),
-        child: GestureDetector(
-          onTap: () {
-            Navigator.of(
-              context,
-            ).pushNamed(AppRoutes.productDetail, arguments: product);
-          },
-          child: Image.network(product.imageUrl, fit: BoxFit.cover),
+            IconButton(
+              onPressed: () {
+                final provider = Provider.of<ProductListProvider>(
+                  context,
+                  listen: false,
+                );
+
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: Text('Excluir produto'),
+                    content: Text(
+                      'Conforme se gostaria de excluir este produto!',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: Text('Não'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: Text('Sim'),
+                      ),
+                    ],
+                  ),
+                ).then((value) {
+                  if (value ?? false) {
+                    provider.removeProduct(product);
+                  }
+                });
+              },
+              icon: Icon(Icons.delete),
+            ),
+          ],
         ),
       ),
     );
